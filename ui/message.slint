@@ -1,0 +1,84 @@
+import {HorizontalBox, VerticalBox} from "std-widgets.slint";
+
+TextBox := Rectangle {
+	in property <string> text;
+
+	property <length> font-size;
+
+	preferred-width: text-wdgt.preferred-width;
+	preferred-height: text-wdgt.preferred-height;
+	min-height: self.preferred-height;
+	min-width: self.preferred-width;
+
+	text-wdgt := Text {
+		width: root.width;
+		height: root.height;
+		font-size: root.font-size;
+
+		wrap: word-wrap;
+
+		horizontal-alignment: left;
+		vertical-alignment:   top;
+
+		text: root.text;
+	}
+}
+
+export Message := Rectangle {
+	in property <string> text;
+	in property <bool>   left;
+	in property <string> sender;
+	in property <string> time;
+	in property <bool>   different-sender;
+
+	padding: 10px;
+	padding-top: 15px;
+	
+	property <length> real-padding-top: (different-sender ? padding-top : 0);
+
+	preferred-height: box.preferred-height + real-padding-top;
+	preferred-width: box.preferred-width + padding;
+	width: self.preferred-width;
+	height: self.preferred-height;
+
+	Rectangle {
+		x: root.padding;
+		y: root.real-padding-top;
+
+		height: parent.height - root.real-padding-top;
+		width:  parent.width - root.padding;
+
+		opacity: 20%;
+		background: (left ? cyan : lime).brighter(1-self.opacity);
+
+		border-radius: box.padding;
+	}
+
+	box := VerticalBox {
+		padding: root.padding;
+
+		x: root.padding;
+		y: root.real-padding-top;
+
+		if different-sender : sender-wgt := Text {
+			text: (left ? root.sender : "You") + " at " + root.time + ":";
+			font-size: 7pt;
+		}
+
+		text-wgt := TextBox {
+			vertical-stretch: 2;
+			text: root.text;
+			padding-right: parent.padding;
+		}
+	}
+}
+
+Recipe := Window {
+	preferred-height: 320px;
+	preferred-width:  320px;
+
+	default-font-family: "Noto Mono";
+	default-font-size: 13pt;
+
+	Message { text: "Help! Me du wichser btw!"; left: true; sender: "Artur"; time: "12pm"; }
+}
