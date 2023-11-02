@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'settings.dart';
 import 'package:flutter_chat_bubble/chat_bubble.dart';
 import 'package:flutter_chat_bubble/bubble_type.dart';
@@ -37,7 +36,8 @@ class ChatMessage_display{
 
   ChatMessage_display({required this.type, required this.data, required this.username, required this.time});
 
-    String toString(){
+    @override
+  String toString(){
     return data;
   }
 
@@ -114,7 +114,7 @@ class _LoginState extends State<Login> {
                   margin: const EdgeInsets.all(10),
 
                   //frabe der Textblase
-                  backGroundColor: Color.fromARGB(255, 26, 197, 228),
+                  backGroundColor: const Color.fromARGB(255, 26, 197, 228),
                   
                   // padding
                   //daten in der Textblase
@@ -123,21 +123,21 @@ class _LoginState extends State<Login> {
                       alignment: Alignment.bottomRight,
                       widthFactor: max(messages[index].toString().length.toDouble()/9, messages[index].username.toString().length.toDouble()/9),
                       child: 
-                        Text(
+                        const Text(
                           "u",
                           style: TextStyle(color: Color.fromARGB(255, 248, 248, 248)),
                       ),
                     ),
                     Text(
                       messages[index].toString(),
-                      style: TextStyle(color: const Color.fromARGB(255, 255, 255, 255)),
+                      style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                       ),
                     Align(
                       alignment: Alignment.topRight,
                       widthFactor: max(messages[index].toString().length.toDouble()/9, TimeOfDay.now().toString().length.toDouble()/9),
                       child: Text(
                         TimeOfDay.now().toString(),
-                        style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                        style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                         ),
                     )
 

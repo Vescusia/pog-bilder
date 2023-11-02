@@ -1,6 +1,6 @@
 {
-    "name": "pogbilder",
-    "short_name": "pogbilder",
+    "name": "ui",
+    "short_name": "ui",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
