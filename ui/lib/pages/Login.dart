@@ -115,34 +115,23 @@ class _LoginState extends State<Login> {
 
                   //frabe der Textblase
                   backGroundColor: const Color.fromARGB(255, 26, 197, 228),
-                  
-                  // padding
-                  //daten in der Textblase
-                  child:  Column (textDirection: TextDirection.rtl ,children: [
-                     Align(
-                      alignment: Alignment.bottomRight,
-                      widthFactor: max(messages[index].toString().length.toDouble()/9, messages[index].username.toString().length.toDouble()/9),
-                      child: 
-                        const Text(
-                          "u",
-                          style: TextStyle(color: Color.fromARGB(255, 248, 248, 248)),
-                      ),
-                    ),
-                    Text(
-                      messages[index].toString(),
-                      style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
-                      ),
-                    Align(
-                      alignment: Alignment.topRight,
-                      widthFactor: max(messages[index].toString().length.toDouble()/9, TimeOfDay.now().toString().length.toDouble()/9),
-                      child: Text(
-                        TimeOfDay.now().toString(),
-                        style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                  child: Container(
+                    constraints: BoxConstraints.loose(Size.fromWidth(260)),
+                    child: Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: Text("data"),
                         ),
-                    )
-
-                  ],
-                  )
+                        Text(messages[index].toString()),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(TimeOfDay.now().toString()),
+                        )
+                      ]
+                      ),
+                  ),
+                  
                 );
               },
             ),
@@ -181,4 +170,3 @@ class _LoginState extends State<Login> {
     );
   }
 }
-
