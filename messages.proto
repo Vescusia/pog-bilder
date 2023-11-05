@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+// The main [Message] Type
+// These are the container for the [Message.data] being sent
+message Message {
+    // the sender of the Message
+    Sender sender = 1;
+    // Seconds since Unix-Epoch
+    uint64 timestamp = 2;
+    // the Data being sent
+    oneof data {
+        string text = 3;
+        bytes image = 4;
+        File file = 5;
+    }
+}
+
+// the Sender type
+message Sender {
+    // Name of the Sender
+    string name = 1;
+    // the unique Identifier of the Sender
+    bytes uuid = 2;
+}
+
+// a Kind of Data send with [Message]
+message File {
+    string filename = 1;
+    bytes data = 2;
+}
+
+
+// a Request for all newer [Message]s than [MessageRequest.since]
+message MessageRequest {
+    Sender sender = 1;
+    // the Seconds since Unix-Epoch
+    uint64 since = 2;
+}
