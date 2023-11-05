@@ -1,12 +1,14 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+
 // The main [Message] Type
 // These are the container for the [Message.data] being sent
 message Message {
     // the sender of the Message
     Sender sender = 1;
     // Seconds since Unix-Epoch
-    uint64 timestamp = 2;
+    google.protobuf.Timestamp timestamp = 2;
     // the Data being sent
     oneof data {
         string text = 3;
@@ -34,5 +36,5 @@ message File {
 message MessageRequest {
     Sender sender = 1;
     // the Seconds since Unix-Epoch
-    uint64 since = 2;
+    google.protobuf.Timestamp since = 2;
 }
