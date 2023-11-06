@@ -1,28 +1,28 @@
-use protobuf::Message;
-use tokio::io::AsyncWriteExt;
-use crate::{messages, sync_reader};
+use prost::Message;
+use pog_bilder::{messages, reader_buffer};
+
 
 use tokio::sync::broadcast::{Sender, Receiver};
+use tokio::io::AsyncWriteExt;
 
 pub async fn handle_client(stream: tokio::net::TcpStream, _addr: std::net::SocketAddr, broadcast: (Sender<messages::Message>, Receiver<messages::Message>)) -> std::io::Result<()> {
     let (reader, writer) = stream.into_split();
-    let mut reader = sync_reader::SyncReader::from(reader);
+    let mut reader: reader_buffer::ReaderBuffer<_> = reader.into();
 
     // handling the "handshake"
     // get message request
-    let (message_request, reader) = tokio::task::spawn_blocking(move || match messages::MessageRequest::parse_from_reader(&mut reader) {
-        Ok(msg) => Ok((msg, reader)),
-        Err(e) => Err(e)
-    }).await??;
+    let message_request = messages::MessageRequest::decode(
+        reader.read_delimited().await?
+    )?;
 
     // TODO: send requested messages
+    println!("{message_request:?} connected!");
     let this_client = message_request.sender;
-
 
     // one, blocking, task handles the messages from the client (needs to be blocking bcs of protobuf)
     // the other task handles writing to the client
     let tasks = [
-        tokio::task::spawn_blocking(|| handle_client_read(reader.into(), broadcast.0)),
+        tokio::spawn(handle_client_read(reader.into(), broadcast.0)),
         tokio::spawn(handle_client_write(writer, broadcast.1, this_client))
     ];
 
@@ -32,9 +32,11 @@ pub async fn handle_client(stream: tokio::net::TcpStream, _addr: std::net::Socke
     Ok(())
 }
 
-fn handle_client_read(mut reader: sync_reader::SyncReader, tx: Sender<messages::Message>) -> std::io::Result<()> {
+async fn handle_client_read(mut reader: reader_buffer::ReaderBuffer<tokio::net::tcp::OwnedReadHalf>, tx: Sender<messages::Message>) -> std::io::Result<()> {
     loop {
-        let message = messages::Message::parse_from_reader(&mut reader)?;
+        let message = Message::decode(
+            reader.read_delimited().await?
+        )?;
 
         // if the broadcast fails, it means no receivers are left, which should not happen.
         if let Err(_) = tx.send(message) {
@@ -44,7 +46,9 @@ fn handle_client_read(mut reader: sync_reader::SyncReader, tx: Sender<messages::
 }
 
 
-async fn handle_client_write(mut writer: tokio::net::tcp::OwnedWriteHalf, mut rx: Receiver<messages::Message>, this_client: protobuf::MessageField<messages::Sender>) -> std::io::Result<()> {
+async fn handle_client_write(mut writer: tokio::net::tcp::OwnedWriteHalf, mut rx: Receiver<messages::Message>, this_client: Option<messages::Sender>) -> std::io::Result<()> {
+    let mut buf = Vec::with_capacity(128);
+
     loop {
         let message = loop {
             // manage lagging
@@ -58,7 +62,9 @@ async fn handle_client_write(mut writer: tokio::net::tcp::OwnedWriteHalf, mut rx
         };
 
         if message.sender != this_client {
-            writer.write_all(&message.write_to_bytes()?).await?;
+            message.encode_length_delimited(&mut buf)?;
+            writer.write_all(&buf).await?;
+            buf.clear();
         }
     }
 }

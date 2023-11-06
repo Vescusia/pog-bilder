@@ -3,15 +3,23 @@ name = "pog_bilder"
 version = "0.1.0"
 edition = "2021"
 authors = ["Vescusia"]
+default-run = "pog_bilder"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+
+[[bin]]
+name = "basic_client"
+path = "src/basic_client/basic_client.rs"
+
 [build-dependencies]
-protobuf-codegen = ">=3.3.0"
+prost-build = ">=0.12.1"
 protoc-bin-vendored = ">=3.0.0"
 
 [dependencies]
-protobuf = ">=3.3.0"
+prost = ">=0.12.1"
+prost-types = ">=0.12.1"
 bytes = ">=1.5.0"
 tokio = { version = "1.33.0", features = ["rt", "net", "sync", "io-util", "io-std", "macros", "time" ] }
 clap = { version = ">=4.4.7", features = ["derive"] }

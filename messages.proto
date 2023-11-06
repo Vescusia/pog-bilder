@@ -1,4 +1,8 @@
 syntax = "proto3";
+package pog_bilder;
+
+// !-- IMPORTANT --!
+// Any messages sent should be length delimited.
 
 import "google/protobuf/timestamp.proto";
 
