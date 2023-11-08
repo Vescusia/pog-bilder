@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'settings.dart';
 import 'package:flutter_chat_bubble/chat_bubble.dart';
@@ -85,6 +87,7 @@ class _LoginState extends State<Login> {
           builder: (BuildContext context) {
             return IconButton(
               icon: const Icon(Icons.settings),
+              color: Colors.black,
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const Settings()));
               },
@@ -92,9 +95,14 @@ class _LoginState extends State<Login> {
           },
         ),
         flexibleSpace: Container(
-          color: const Color.fromARGB(255, 5, 70, 100),
+          color: Colors.amber
         ),
-        title: const Text("Pogbilder - Chat"),
+        title: const Text(
+          "Pogbilder - Chat",
+          style: TextStyle(
+            color: Colors.black
+          ),
+          ),
       ),
 
       // darstellung der Text nachrichten
@@ -126,7 +134,12 @@ class _LoginState extends State<Login> {
                         Text(messages[index].toString()),
                         Align(
                           alignment: Alignment.bottomRight,
-                          child: Text(TimeOfDay.now().toString()),
+                          child: Text(
+                            TimeOfDay.now().toString(),
+                            style: TextStyle(
+                              color: const Color.fromARGB(255, 62, 80, 80)
+                            ),
+                          ),
                         )
                       ]
                       ),

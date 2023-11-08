@@ -1,75 +1,163 @@
+import 'dart:async';
+import 'dart:ffi';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-class Settings extends StatelessWidget {
-  const Settings({Key? key}) : super(key: key);
+
+
+
+class Settings extends StatefulWidget {
+  const Settings({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  _SettingsState createState() => _SettingsState();
+
+}
+
+
+class _SettingsState extends State<Settings> {
+
+  final TextEditingController _controller = TextEditingController();
+
+  void inState() {
+    super.initState();
+    _controller.addListener(() {
+      final String text = _controller.text.toLowerCase();
+      _controller.value = _controller.value.copyWith(
+        text: text,
+        selection: TextSelection(baseOffset: text.length, extentOffset: text.length),
+        composing: TextRange.empty
+      );
+    });
+  }
+
+  void dispose() {
+    _controller.dispose(); // Wichtig, um Speicherlecks zu vermeiden
+    super.dispose();
+  }
+
+
+  Future<void> requestPermissionAndCreateFile() async {
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      status = await Permission.storage.request();
+      if (status.isGranted) {
+        await createFile();
+      }
+    } else {
+      await createFile();
+    }
+  }
+
+  Future<void> createFile() async {
+    try {
+      File file = File("${_controller.text}/PogSettings.txt");
+      await file.writeAsString('Dies ist der Inhalt der Textdatei.');
+      print('Textdatei erstellt: ${file.path}');
+    } catch (e) {
+      // wird ausgefüht wenn ein fehler auftritt
+      print('Fehler beim Erstellen der Datei: $e');
+    }
+  }
+
+
+  @override
+  Widget build(BuildContext context){
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Settings"),
-        flexibleSpace: Container(
-          color: const Color.fromARGB(255, 6, 84, 121),
+      appBar: AppBar(  
+        iconTheme: IconThemeData(
+          color: Colors.black
         ),
+        flexibleSpace: Container(color: Colors.amber),
+        title:  const Text(
+          "Pogbilder - Settings", 
+          style: TextStyle(
+          color: Colors.black
+            ) 
+          ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(8),
-        children: <Widget>[
-          Container(
-            width: 300,
-          ),
-            const FormExample(var_hinttext: 'user-ID'),
-          Container(
-            width: 300,
-          ),
-            const FormExample(var_hinttext: 'user-name'),
-          Container(
-            width: 300,
-          ),
-            const FormExample(var_hinttext: 'IP-adress'),
-          ButtonBar(
-            alignment: MainAxisAlignment.spaceEvenly,
+      body: Column(
+        children: [
+          Row(
+                children: [
+                  Container(
+                    height: 45,
+                    width: 120,
+                    color: Colors.white38,
+                    margin: EdgeInsets.all(10),
+                    child: Align(
+                      child: Text(
+                        "File : ",
+                        style: TextStyle(
+                          fontSize: 20,
+                          ),
+                      ),
+                    )
+                  ),
+                  Container(
+                color: Colors.white24,
+                width: 250,
+                child:  TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                     border: OutlineInputBorder(
+                    ),
+                    focusColor: Colors.black,
+                    labelStyle: TextStyle(color: Colors.black)
+                  ),
+                ),
+              ),
+              
+              Container(
+                margin: EdgeInsets.all(10),
+                child: Align(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        requestPermissionAndCreateFile();
+                      }, 
+                      icon: Icon(Icons.file_open), 
+                      label: Text("Create file \nin given path"),
+                      )
+                  ),
+              )
+              
+
+                ],
+              ),
+          Row( 
             children: [
-              TextButton(onPressed: () {}, child: const Text('Save Data'))
+            
+              Container(
+                margin: EdgeInsets.all(10),
+                height: 45,
+                width: 120,
+                color: Colors.white38,
+                child:  const Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    "Username: ",
+                    style: TextStyle(
+                    fontSize: 20,
+                    ),
+                  ),
+                )
+              ),
+              Container(
+                color: Colors.white24,
+                width: 250,
+                child: const TextField(
+                  decoration: InputDecoration(
+                     border: OutlineInputBorder(
+                    ),
+                    focusColor: Colors.black,
+                    labelStyle: TextStyle(color: Colors.black)
+                  ),
+                ),
+              )
             ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class FormExample extends StatefulWidget {
-  final String var_hinttext;
-
-  // ignore: non_constant_identifier_names
-  const FormExample({required this.var_hinttext, Key? key}) : super(key: key);
-
-  @override
-  State<FormExample> createState() => _FormExampleState();
-}
-
-class _FormExampleState extends State<FormExample> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
-  @override
-  Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          TextFormField(
-            decoration: InputDecoration(
-              hintText: widget.var_hinttext,
-            ),
-            validator: (String? value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter the requiert argument!';
-              }
-              return null;
-            },
-          )
         ],
       ),
     );
