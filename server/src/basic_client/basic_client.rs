@@ -1,5 +1,5 @@
 use std::io::{Read, Write};
-use pog_bilder::messages;
+use pog_bilder::*;
 
 use std::net::TcpStream;
 
@@ -22,20 +22,19 @@ fn main() -> std::io::Result<()> {
     let mut stream = TcpStream::connect(args.address)?;
     println!("Connected to server!");
 
-    let sender = Some({
-        let mut s = messages::Sender::default();
-        s.uuid = {
+    let sender = Some(messages::Sender{
+        uuid: {
             let micros = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros();
             Vec::from(micros.to_be_bytes())
-        };
-        s.name = "Vescusia".to_owned();
-        s
+        },
+        name: "Vescusia".to_owned()
     });
 
     // send MessageRequest
-    let mut msg = messages::MessageRequest::default();
-    msg.sender = sender.clone();
-    msg.since =  Some(prost_types::Timestamp::from(std::time::SystemTime::now()));
+    let msg = messages::MessageRequest{
+        sender: sender.clone(),
+        since:  Some(prost_types::Timestamp::from(std::time::SystemTime::now()))
+    };
     let bytes = msg.encode_length_delimited_to_vec();
     println!("{bytes:?}");
     stream.write_all(&bytes)?;
@@ -43,33 +42,34 @@ fn main() -> std::io::Result<()> {
     println!("MessageRequest sent! {}, {} <> {}", msg == new_message, bytes.len(), msg.encoded_len());
 
     // no replies
-    let mut msg = messages::Message::default();
-    msg.sender = sender.clone().into();
-    msg.timestamp = Some(prost_types::Timestamp::from(std::time::SystemTime::now()));
-    msg.data = Some(messages::message::Data::Text({
-        let mut text = String::with_capacity(300);
-        for _ in 0..300 {
-            text.push('a')
-        }
-        text
-    }));
+    let msg = messages::Message{
+        sender: sender.clone(),
+        timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
+        data: Some(messages::message::Data::Text({
+            let mut text = String::with_capacity(300);
+            for _ in 0..300 {
+                text.push('a')
+            }
+            text
+        }))
+    };
+    stream.write_all(&msg.encode_length_delimited_to_vec())?;
     println!("Message1 sent: {:?} = {}", msg, msg.encoded_len());
-    stream.write_all(&msg.encode_length_delimited_to_vec())?;
-    stream.flush()?;
 
-    let mut msg = messages::Message::default();
-    msg.sender = sender.into();
-    msg.timestamp = Some(prost_types::Timestamp::from(std::time::SystemTime::now()));
-    msg.data = Some(messages::message::Data::Text(args.message));
-    println!("Message2 sent: {:?} = {}", msg, msg.encoded_len());
+    let msg = messages::Message{
+        sender,
+        timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
+        data: Some(messages::message::Data::Text(args.message))
+    };
     stream.write_all(&msg.encode_length_delimited_to_vec())?;
+    println!("Message2 sent: {:?} = {}", msg, msg.encoded_len());
 
     // check reply
     let mut buf = vec![0u8; 1024];
-    stream.read(&mut buf)?;
-    let mut buf = bytes::BytesMut::from(buf.as_slice());
-    let msg = Message::decode_length_delimited(&mut buf)?;
-    println!("message received: {msg:?}");
+    let amount = stream.read(&mut buf)?;
+    let buf = bytes::Bytes::from(buf);
+    let msg = messages::Message::decode_length_delimited(buf)?;
+    println!("message received: {msg:?} <> {amount}");
 
     Ok(())
 }

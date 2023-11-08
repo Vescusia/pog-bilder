@@ -68,9 +68,9 @@ TCP is used as the transport layer. It will take care of error checking and hand
 ## Protocol Diagram
 ' * ' stands for "zero or more times"
 
-| Server | Client | Phase |
-|--|--|--|
-|  |  [`MessageRequest`](#messagerequest)| [Initilization](#initialization) |
-| [`Message`](#message)* |  | [Initilization](#initialization) |
-| [`Message`](#message)* | [`Message`](#message)* | [Message Exchange](#message-exchange) |
-| | *disconnect* | [Disconnect](#disconnect) |
+| Server                 | Client                              | Phase                                 |
+|------------------------|-------------------------------------|---------------------------------------|
+|                        | [`MessageRequest`](#messagerequest) | [Initilization](#initialization)      |
+| [`Message`](#message)* |                                     | [Initilization](#initialization)      |
+| [`Message`](#message)* | [`Message`](#message)*              | [Message Exchange](#message-exchange) |
+|                        | *disconnect*                        | [Disconnect](#disconnect)             |

@@ -16,16 +16,6 @@ impl<S: AsyncReadExt + Unpin + AsyncRead> ReaderBuffer<S> {
         }
     }
 
-    #[inline(always)]
-    /// fills the buffer until the stream "runs out"
-    pub async fn fill_buffer(&mut self) -> std::io::Result<()> {
-        loop {
-            let bytes_read = self.reader.read_buf(&mut self.bytes).await?;
-            if bytes_read == 0 {
-                break Ok(())
-            }
-        }
-    }
 
     /// Reads a length delimiter from the wire and then returns as many [`bytes::Bytes`] as delimited.
     ///
@@ -69,38 +59,7 @@ impl<S: AsyncReadExt + Unpin + AsyncRead> ReaderBuffer<S> {
                 break;
             }
         }
-
         Ok(delimiter as usize)
-    }
-
-    #[inline(always)]
-    /// Confirm the amount of bytes read.
-    /// This is extremely important to call after [`Self::read_buffer`] or [`Self::fill_and_read`].
-    ///
-    /// Example:
-    /// let's say you want to decode some array of Bytes into an object
-    /// and this buffer has 72 Bytes in it.
-    /// Now you decode the first 32 Bytes into some object.
-    /// These 32 Bytes should be freed and not be read again.
-    ///
-    /// **you have to call this method for exactly this purpose**
-    /// If you don't want to do this, consider using length delimited messages ([`Self::read_delimited`])
-    pub fn confirm_read(&mut self, amount: usize) {
-        println!("{} - {}", self.bytes.len(), amount);
-        let _ = self.bytes.split_to(amount);
-    }
-
-    #[inline(always)]
-    /// Returns the buffer as a slice
-    pub fn read_buffer(&mut self) -> &[u8] {
-        self.bytes.as_ref()
-    }
-
-    #[inline(always)]
-    /// Clears, then fills and then returns the contents of the buffer
-    pub async fn fill_and_read(&mut self) -> std::io::Result<&[u8]> {
-        self.fill_buffer().await?;
-        Ok(self.read_buffer())
     }
 }
 
