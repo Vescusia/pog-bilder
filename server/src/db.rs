@@ -1,3 +1,4 @@
+use prost::Message;
 use crate::*;
 
 use tokio_rusqlite::Connection;
@@ -50,13 +51,17 @@ pub async fn add_message(db: Connection, msg: &messages::Message) -> Result<()> 
         msg.timestamp.as_ref().unwrap()
     );
 
-    let sender = sender_to_u64(
-        msg.sender.as_ref().unwrap()
-    )?;
+    let sender = msg.sender
+        .as_ref()
+        .unwrap()
+        .uuid;
 
-    let data = msg.data.as_ref().unwrap();
-    let mut buf = Vec::with_capacity(data.encoded_len());
-    data.encode(&mut buf);
+    // This approach has some advantages and some disadvantages.
+    // The sender and timestamp field are being saved twice.
+    // But the message doesn't have to be re-encoded when being sent.
+    // That is the path I will choose.
+    let mut buf = Vec::with_capacity(msg.encoded_len());
+    msg.encode_length_delimited(&mut buf)?;
 
     db.call(move |conn| {
         conn.execute(
@@ -70,28 +75,11 @@ pub async fn add_message(db: Connection, msg: &messages::Message) -> Result<()> 
 }
 
 
-fn timestamp_to_real(timestamp: &prost_types::Timestamp) -> f64 {
-    let mut real = 0f64;
-    real += timestamp.seconds as f64;
-    real += (timestamp.nanos as f64) / 10f64.powf(9.0);
-    real
-}
-
-fn sender_to_u64(sender: &messages::Sender) -> Result<u64> {
-    let bytes = &sender.uuid;
-    let (bytes, _) = bytes.split_at(8);
-    Ok(u64::from_be_bytes(
-        (*bytes).try_into()?
-    ))
-}
-
-
 /// Adds a sender to the database
 ///
 /// This function will handle adding of already existing senders gracefully and without error.
 pub async fn add_sender(db: Connection, sender: &messages::Sender) -> Result<()> {
-    let uuid = sender_to_u64(sender)?;
-    let name = sender.name.clone();
+    let (name, uuid) = (sender.name.clone(), sender.uuid);
 
     db.call(move |conn| {
         conn.execute(
@@ -102,4 +90,49 @@ pub async fn add_sender(db: Connection, sender: &messages::Sender) -> Result<()>
     }).await?;
 
     Ok(())
+}
+
+
+/// Selects all the [`messages::Message`]'s sent since `since`.
+///
+/// The [`messages::Message`]'s will be passed through a [`tokio::sync::mpsc::Receiver`] channel.
+/// They are encoded in length delimited byte-form.
+pub async fn select_messages_since(db: Connection, sender: &messages::Sender, since: &prost_types::Timestamp) -> Result<tokio::sync::mpsc::Receiver<Vec<u8>>> {
+    let (since, sender) = (timestamp_to_real(since), sender.uuid);
+    let (tx, rx) = tokio::sync::mpsc::channel(32);
+
+    db.call(move |conn| {
+        // prepare select
+        let mut stmt = conn.prepare_cached("
+            SELECT data
+            FROM messages
+            WHERE
+                timestamp > ?1 AND
+                sender != ?2
+        ")?;
+
+        // execute select
+        let messages = stmt.query_map(
+            (since, sender),
+            |row| {
+                row.get(0)
+            }
+        )?;
+
+        // send messages
+        for message in messages.flatten() {
+            let _ = tx.blocking_send(message);
+        }
+        Ok(())
+    }).await?;
+
+    Ok(rx)
+}
+
+
+fn timestamp_to_real(timestamp: &prost_types::Timestamp) -> f64 {
+    let mut real = 0f64;
+    real += timestamp.seconds as f64;
+    real += (timestamp.nanos as f64) / 10f64.powf(9.0);
+    real
 }

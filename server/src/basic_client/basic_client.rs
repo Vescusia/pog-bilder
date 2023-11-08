@@ -2,6 +2,7 @@ use std::io::{Read, Write};
 use pog_bilder::*;
 
 use std::net::TcpStream;
+use std::time::Duration;
 
 use clap::Parser;
 use prost::Message;
@@ -25,7 +26,7 @@ fn main() -> std::io::Result<()> {
     let sender = Some(messages::Sender{
         uuid: {
             let micros = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros();
-            Vec::from(micros.to_be_bytes())
+            micros as u64
         },
         name: "Vescusia".to_owned()
     });
@@ -33,7 +34,7 @@ fn main() -> std::io::Result<()> {
     // send MessageRequest
     let msg = messages::MessageRequest{
         sender: sender.clone(),
-        since:  Some(prost_types::Timestamp::from(std::time::SystemTime::now()))
+        since:  Some(prost_types::Timestamp::from(std::time::UNIX_EPOCH))
     };
     let bytes = msg.encode_length_delimited_to_vec();
     println!("{bytes:?}");
@@ -64,7 +65,9 @@ fn main() -> std::io::Result<()> {
     stream.write_all(&msg.encode_length_delimited_to_vec())?;
     println!("Message2 sent: {:?} = {}", msg, msg.encoded_len());
 
+
     // check reply
+    std::thread::sleep(Duration::from_secs_f32(0.1));
     let mut buf = vec![0u8; 1024];
     let amount = stream.read(&mut buf)?;
     let buf = bytes::Bytes::from(buf);

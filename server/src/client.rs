@@ -6,7 +6,7 @@ use tokio::sync::broadcast::{Sender, Receiver};
 use tokio::io::AsyncWriteExt;
 
 pub async fn handle_client(stream: tokio::net::TcpStream, _addr: std::net::SocketAddr, broadcast: (Sender<messages::Message>, Receiver<messages::Message>), db: tokio_rusqlite::Connection) -> Result<()> {
-    let (reader, writer) = stream.into_split();
+    let (reader, mut writer) = stream.into_split();
     let mut reader: reader_buffer::ReaderBuffer<_> = reader.into();
 
     // handling the "handshake"
@@ -14,13 +14,24 @@ pub async fn handle_client(stream: tokio::net::TcpStream, _addr: std::net::Socke
     let message_request = messages::MessageRequest::decode(
         reader.read_delimited().await?
     )?;
-
-    // TODO: send requested messages
     println!("{message_request:?} connected!");
+
+
+    // send all requested messages
     let this_client = message_request.sender;
     if let Some(client) = &this_client {
         db::add_sender(db.clone(), client).await?;
+
+        let mut msgs_sent = 0;
+        let since = message_request.since.as_ref().unwrap();
+        let mut messages = db::select_messages_since(db.clone(), client, since).await?;
+        while let Some(msg) = messages.recv().await {
+            writer.write_all(&msg).await?;
+            msgs_sent += 1;
+        }
+        println!("client requested (and received) {msgs_sent} messages.")
     }
+
 
     // one, blocking, task handles the messages from the client (needs to be blocking bcs of protobuf)
     // the other task handles writing to the client
@@ -41,7 +52,6 @@ async fn handle_client_read(mut reader: reader_buffer::ReaderBuffer<tokio::net::
             reader.read_delimited().await?
         )?;
 
-        // publish message to database
         db::add_message(db.clone(), &message).await?;
 
         // if the broadcast fails, it means no receivers are left, which should not happen.
@@ -65,6 +75,7 @@ async fn handle_client_write(mut writer: tokio::net::tcp::OwnedWriteHalf, mut rx
             }
         };
 
+        // send message
         if message.sender != this_client {
             message.encode_length_delimited(&mut buf)?;
             writer.write_all(&buf).await?;
