@@ -4,8 +4,12 @@
  
 
 # The Objects
-The actual data will be serialized using [BSON](https://en.wikipedia.org/wiki/BSON), a more efficient version of JSON.
-This section will describe the actual data-objects being sent in a JSON-like form. This is not the [protocol](#the-protocol).
+The actual data will be serialized using [Protocol Buffers](https://protobuf.dev/programming-guides/proto3/), matching the simple and efficient needs for this project.
+
+This is not the [protocol](#the-protocol).
+This section will describe the data-objects being sent in an abstract way.
+
+**These are abstract definitions, please refer to the `messages.proto` file for concrete specifics.**
 
 ### Message 
 ```
@@ -27,9 +31,9 @@ product Sender := {
 ### MessageBody
 ```
 sum MessageBody := {
-	Image(Bytes),
-	Text(String),
-	File(String, Bytes)  // (filename, data)
+	Image{image: Bytes},
+	Text{text: String},
+	File{filename: String, file: Bytes}
 }
 ```
 
@@ -64,9 +68,9 @@ TCP is used as the transport layer. It will take care of error checking and hand
 ## Protocol Diagram
 ' * ' stands for "zero or more times"
 
-| Server | Client | Phase |
-|--|--|--|
-|  |  [`MessageRequest`](#messagerequest)| [Initilization](#initialization) |
-| [`Message`](#message)* |  | [Initilization](#initialization) |
-| [`Message`](#message)* | [`Message`](#message)* | [Message Exchange](#message-exchange) |
-| | *disconnect* | [Disconnect](#disconnect) |
+| Server                 | Client                              | Phase                                 |
+|------------------------|-------------------------------------|---------------------------------------|
+|                        | [`MessageRequest`](#messagerequest) | [Initilization](#initialization)      |
+| [`Message`](#message)* |                                     | [Initilization](#initialization)      |
+| [`Message`](#message)* | [`Message`](#message)*              | [Message Exchange](#message-exchange) |
+|                        | *disconnect*                        | [Disconnect](#disconnect)             |

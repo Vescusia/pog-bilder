@@ -2,3 +2,5 @@
 /.idea
 /lsp
 /.fleet
+*.exe
+/server/db
