@@ -23,7 +23,7 @@ product Message := {
 ### Sender
 ```
 product Sender := {
-	uuid: u128,
+	uuid: u64,
 	name: String
 }
 ```
@@ -33,7 +33,9 @@ product Sender := {
 sum MessageBody := {
 	Image{image: Bytes},
 	Text{text: String},
-	File{filename: String, file: Bytes}
+	BigFileOffer{filename: String, size: u64},
+	BigFileAccept{timestamp: int},  // accept Offer with this timestamp (seconds since Unix-Epoch)
+	BigFileData{timestamp: int, bytes: Bytes}  // send some Bytes belonging to the Offer with this timestamp (seconds since Unix-Epoch)
 }
 ```
 
@@ -62,15 +64,25 @@ TCP is used as the transport layer. It will take care of error checking and hand
 
 > repeat until [Disconnect](#disconnect)
 
+### Big File Exchange
+> Client sends [`Message`](#message), with `data` = `BigFileOffer`, with the `size` = size in bytes of the file.
+
+> Server may accept, sending a [`Message`](#message), with `data` = `BigFileAccept`, where the `timestamp` equals the one of the original offer.
+
+> Client then has the responsibility to send as many `bytes`, using [`Message`](#message)'s with `data` = `BigFileData`, as promised in the original offer.
+
 ### Disconnect
 *no important events, simple TCP disconnect*
+
+If there are any `BigFile`'s with not all promised `bytes` received, they shall be discarded by the server.
+
 
 ## Protocol Diagram
 ' * ' stands for "zero or more times"
 
-| Server                 | Client                              | Phase                                 |
-|------------------------|-------------------------------------|---------------------------------------|
-|                        | [`MessageRequest`](#messagerequest) | [Initilization](#initialization)      |
-| [`Message`](#message)* |                                     | [Initilization](#initialization)      |
-| [`Message`](#message)* | [`Message`](#message)*              | [Message Exchange](#message-exchange) |
-|                        | *disconnect*                        | [Disconnect](#disconnect)             |
+| Server                 | Client                              | Phase                                                                       |
+|------------------------|-------------------------------------|-----------------------------------------------------------------------------|
+|                        | [`MessageRequest`](#messagerequest) | [Initilization](#initialization)                                            |
+| [`Message`](#message)* |                                     | [Initilization](#initialization)                                            |
+| [`Message`](#message)* | [`Message`](#message)*              | [Message Exchange](#message-exchange)/[BigFileExchange](#big-file-exchange) |
+|                        | *disconnect*                        | [Disconnect](#disconnect)                                                   |

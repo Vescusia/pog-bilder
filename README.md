@@ -1,5 +1,5 @@
 # Pog Bilder
-Die offizielle Pog-Bilder Applikation für die Jungs.
+Die offizielle Pog Bilder Applikation für die Jungs.
 
 ## Concept
 Pog Bilder is a project that tries to create a FOSS, self-hostable, feature rich, high performance and multiplatform chatting application.
@@ -45,14 +45,20 @@ This codbase is split into two parts:
 
 ## Usage
 ### Server
-> clone the repository
-> `git clone https://github.com/Vescusia/pog-bilder.git`
->  move into directory
-> `cd pog-bilder/server`
->  run server on port 6969
->  `cargo run -r -- -p 6969`
->  
->  (forward port + open firewall if necessary)
+clone the repository
+> ```bash
+> git clone https://github.com/Vescusia/pog-bilder.git`
+> ```
+
+move into directory
+> ```bash
+>	cd pog-bilder/server
+> ```
+
+run server on port 6969 (forward port + open firewall if necessary)
+>  ```bash
+> cargo run -r -- -p 6969
+> ```
 
 For more infos, see
 `cargo run -r -- --help`

@@ -6,6 +6,8 @@ package pog_bilder;
 
 import "google/protobuf/timestamp.proto";
 
+// <-- main sendable messages -->
+
 // The main [Message] Type
 // These are the container for the [Message.data] being sent
 message Message {
@@ -17,9 +19,21 @@ message Message {
     oneof data {
         string text = 3;
         bytes image = 4;
-        File file = 5;
+        BigFileOffer bigFileOffer = 6;
+        google.protobuf.Timestamp bigFileAccept = 7;  // accept the BigFile with this timestamp
+        BigFileData bigFileData = 8;
     }
 }
+
+// a Request for all newer [Message]s than [MessageRequest.since]
+message MessageRequest {
+    Sender sender = 1;
+    // the Seconds since Unix-Epoch
+    google.protobuf.Timestamp since = 2;
+}
+
+
+// <-- helper messages -->
 
 // the Sender type
 message Sender {
@@ -29,16 +43,16 @@ message Sender {
     fixed64 uuid = 2;
 }
 
-// a Kind of Data send with [Message]
-message File {
+// the Offer for a "big file", might be accepted (see [Message.data.bigFileAccept])
+message BigFileOffer {
     string filename = 1;
-    bytes data = 2;
+    uint64 byte_amount = 2;
 }
 
-
-// a Request for all newer [Message]s than [MessageRequest.since]
-message MessageRequest {
-    Sender sender = 1;
-    // the Seconds since Unix-Epoch
-    google.protobuf.Timestamp since = 2;
+// some Data for the big file with this timestamp
+// The sum of the bytes sent with the [BigFileData]'s should exactly equal the amount offered in the [BigFileOffer].
+// Also, because of the overhead of this being sent within a [Message] (≈40 bytes), try sending reasonably large sized chunks (≈4kiB) of the total Data.
+message BigFileData {
+    google.protobuf.Timestamp file_id = 1;
+    bytes bytes = 2;
 }
