@@ -4,28 +4,25 @@ mod client;
 mod args;
 
 
-use clap::Parser;
-
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    let args = args::Args::parse();
-
+    let args = args::parse_args();
 
     // create database connection
-    let db = db::create_or_connect_db(args.db_path.as_deref()).await?;
-
+    let db = db::create_or_connect_db(&args.env_args.db_path).await?;
 
     // create broadcast channel
     let (tx, rx) = tokio::sync::broadcast::channel(32);
 
     // create listener
     let addr: std::net::SocketAddr = std::net::SocketAddr::new(
-        args.bind_address.parse().expect("could not parse given Ip Address!"),
-        args.port
+        args.env_args.bind_address.parse()?,
+        args.env_args.port
     );
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
     // "start" server
+    let args = std::sync::Arc::new(args);
     println!("Server is listening!");
     loop {
         let (socket, addr) = listener.accept().await?;
@@ -35,7 +32,8 @@ async fn main() -> Result<()> {
                 socket,
                 addr,
                 (tx.clone(), rx.resubscribe()),
-                db.clone()
+                db.clone(),
+                args.clone()
             )
         );
     }
