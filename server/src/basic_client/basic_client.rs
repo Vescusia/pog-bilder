@@ -19,6 +19,7 @@ struct Args {
 
 fn main() -> std::io::Result<()> {
     let args = Args::parse();
+    Args::parse();
 
     let mut stream = TcpStream::connect(args.address)?;
     println!("Connected to server!");
@@ -58,7 +59,7 @@ fn main() -> std::io::Result<()> {
     println!("Message1 sent: {:?} = {}", msg, msg.encoded_len());
 
     let msg = messages::Message{
-        sender,
+        sender: sender.clone(),
         timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
         data: Some(messages::message::Data::Text(args.message))
     };
@@ -71,8 +72,38 @@ fn main() -> std::io::Result<()> {
     let mut buf = vec![0u8; 1024];
     let amount = stream.read(&mut buf)?;
     let buf = bytes::Bytes::from(buf);
-    let msg = messages::Message::decode_length_delimited(buf)?;
+    let msg = messages::Message::decode_length_delimited(buf.clone())?;
     println!("message received: {msg:?} <> {amount}");
+
+    // write big file offer
+    let timestamp = Some(prost_types::Timestamp::from(std::time::SystemTime::now()));
+    let msg = messages::Message{
+        sender: sender.clone(),
+        timestamp: timestamp.clone(),
+        data: Some(messages::message::Data::BigFileOffer(
+            messages::BigFileOffer{
+                byte_amount: amount as u64,
+                filename: "smd".to_owned()
+            }
+        ))
+    };
+    stream.write_all(&msg.encode_length_delimited_to_vec())?;
+    println!("Message 3 'BigFileOffer' sent: {msg:?}");
+
+    // write big file data
+    let msg = messages::Message{
+        sender: sender.clone(),
+        timestamp: Some(prost_types::Timestamp::from(std::time::SystemTime::now())),
+        data: Some(messages::message::Data::BigFileData(
+            messages::BigFileData{
+                file_id: timestamp,
+                bytes: buf.to_vec()
+            }
+        ))
+    };
+    stream.write_all(&msg.encode_length_delimited_to_vec())?;
+    println!("Message 4 'BigFileData' sent: {msg:?}");
+
 
     Ok(())
 }
