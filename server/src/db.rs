@@ -3,12 +3,14 @@ use crate::*;
 
 use tokio_rusqlite::Connection;
 
+// TODO: swap over to the SQLx library for better performance and ergonomics
+
 
 /// create or connect to the database at `path`
 ///
 /// If `path` `==` [`None`], then the database will be created in memory.
-pub async fn create_or_connect_db(path: Option<&str>) -> Result<Connection> {
-    let conn = if let Some(path) = path {
+pub async fn create_or_connect_db(path: &str) -> Result<Connection> {
+    let conn = if !path.is_empty() {
         // create the path
         let path = std::path::PathBuf::from(path);
         if let Some(dir) = path.parent() {
@@ -34,8 +36,7 @@ pub async fn create_or_connect_db(path: Option<&str>) -> Result<Connection> {
                 data BLOB NOT NULL,
                 FOREIGN KEY (sender) REFERENCES senders(uuid)
             );
-            COMMIT;
-            "
+            COMMIT;"
     )}).await?;
 
     Ok(conn)
