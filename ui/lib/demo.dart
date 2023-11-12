@@ -1,63 +1,76 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 
-/// Flutter code sample for [TextEditingController].
+void main() {
+  runApp(MyApp());
+}
 
-void main() => runApp(const TextEditingControllerExampleApp());
-
-class TextEditingControllerExampleApp extends StatelessWidget {
-  const TextEditingControllerExampleApp({super.key});
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: TextEditingControllerExample(),
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('JSON Beispiel'),
+        ),
+        body: MyWidget(),
+      ),
     );
   }
 }
 
-class TextEditingControllerExample extends StatefulWidget {
-  const TextEditingControllerExample({super.key});
-
+class MyWidget extends StatefulWidget {
   @override
-  State<TextEditingControllerExample> createState() =>
-      _TextEditingControllerExampleState();
+  _MyWidgetState createState() => _MyWidgetState();
 }
 
-class _TextEditingControllerExampleState
-    extends State<TextEditingControllerExample> {
-  final TextEditingController _controller = TextEditingController();
+class _MyWidgetState extends State<MyWidget> {
+  Map<String, dynamic> jsonData = {};
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() {
-      final String text = _controller.text.toLowerCase();
-      _controller.value = _controller.value.copyWith(
-        text: text,
-        selection:
-            TextSelection(baseOffset: text.length, extentOffset: text.length),
-        composing: TextRange.empty,
-      );
-    });
+    // Beim Start die Daten aus der JSON-Datei lesen
+    readDataFromJson();
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void readDataFromJson() {
+    try {
+      
+      String filePath = "H:/Flutter/Pogbilder UI/pog-bilder/ui/deine_datei.json";
+      File file = File(filePath);
+
+      // Lesen des JSON-Strings aus der Datei
+      Map<String, dynamic> data = jsonDecode(jsonString);
+      String jsonString = file.readAsStringSync();
+
+      // Konvertieren des JSON-Strings in ein Dart-Map-Objekt
+      
+
+      setState(() {
+        jsonData = data;
+      });
+    } catch (e) {
+      print('Fehler beim Lesen der Daten: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(6),
-        child: TextFormField(
-          controller: _controller,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        ElevatedButton(
+          onPressed: () {
+            // Beim Knopfdruck die Daten in der Konsole ausgeben
+            print('JSON-Daten: $jsonData');
+          },
+          child: Text('Daten ausgeben'),
         ),
-      ),
+      ],
     );
   }
 }

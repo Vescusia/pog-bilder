@@ -1,11 +1,24 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:ui/main.dart';
 
+class userData {
+  final String username;
 
+  userData(this.username);
+
+  userData.fromJason(Map<String, dynamic> jason)
+    : username = jason['username'] as String;
+
+  Map<String, dynamic> toJson() => {
+    'username' : username
+  };
+}
 
 
 class Settings extends StatefulWidget {
@@ -65,6 +78,7 @@ class _SettingsState extends State<Settings> {
 
   @override
   Widget build(BuildContext context){
+
     return Scaffold(
       appBar: AppBar(  
         iconTheme: IconThemeData(
@@ -115,7 +129,20 @@ class _SettingsState extends State<Settings> {
                 child: Align(
                     child: TextButton.icon(
                       onPressed: () {
-                        requestPermissionAndCreateFile();
+                        if (_controller.text.isNotEmpty) {
+                          requestPermissionAndCreateFile();
+                        } else {
+                          showDialog(context: context, builder:(context) => AlertDialog(
+                            title: const Text('Error!'),
+                              content: const Text('the path muss bee \ngiven to create a file!'),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, 'OK'),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                          ),);
+                        }
                       }, 
                       icon: Icon(Icons.file_open), 
                       label: Text("Create file \nin given path"),
@@ -123,12 +150,10 @@ class _SettingsState extends State<Settings> {
                   ),
               )
               
-
                 ],
               ),
           Row( 
             children: [
-            
               Container(
                 margin: EdgeInsets.all(10),
                 height: 45,
@@ -158,6 +183,11 @@ class _SettingsState extends State<Settings> {
               )
             ],
           ),
+          IconButton(
+            onPressed: () {
+              print("test");
+            }, 
+            icon: Icon(Icons.print_outlined))
         ],
       ),
     );
