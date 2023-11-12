@@ -1,11 +1,13 @@
 import 'dart:io';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'settings.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_chat_bubble/chat_bubble.dart';
 import 'package:flutter_chat_bubble/bubble_type.dart';
 import 'package:flutter_chat_bubble/clippers/chat_bubble_clipper_1.dart';
 import 'dart:math';
+import 'dart:async';
 
 
 class Login extends StatefulWidget {
@@ -76,6 +78,16 @@ class _LoginState extends State<Login> {
     
   }
 
+  List _items = [];
+
+  Future<void> readJason() async {
+    final String respons = await rootBundle.loadString('assets/sampel.json');
+    final data = await json.decode(respons);
+    setState(() {
+      _items = data["settings"];
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +101,7 @@ class _LoginState extends State<Login> {
               icon: const Icon(Icons.settings),
               color: Colors.black,
               onPressed: () {
+                readJason();
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const Settings()));
               },
             );
@@ -129,7 +142,7 @@ class _LoginState extends State<Login> {
                       children: [
                         Align(
                           alignment: Alignment.topLeft,
-                          child: Text("data"),
+                          child: Text("${_items[0]}"),
                         ),
                         Text(messages[index].toString()),
                         Align(

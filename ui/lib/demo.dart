@@ -44,14 +44,14 @@ class _MyWidgetState extends State<MyWidget> {
       File file = File(filePath);
 
       // Lesen des JSON-Strings aus der Datei
-      Map<String, dynamic> data = jsonDecode(jsonString);
+      //Map<String, dynamic> data = jsonDecode(jsonString);
       String jsonString = file.readAsStringSync();
 
       // Konvertieren des JSON-Strings in ein Dart-Map-Objekt
       
 
       setState(() {
-        jsonData = data;
+        //jsonData = data;
       });
     } catch (e) {
       print('Fehler beim Lesen der Daten: $e');

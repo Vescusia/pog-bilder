@@ -3,22 +3,10 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:ui/main.dart';
-
-class userData {
-  final String username;
-
-  userData(this.username);
-
-  userData.fromJason(Map<String, dynamic> jason)
-    : username = jason['username'] as String;
-
-  Map<String, dynamic> toJson() => {
-    'username' : username
-  };
-}
 
 
 class Settings extends StatefulWidget {
@@ -26,6 +14,7 @@ class Settings extends StatefulWidget {
 
   @override
   _SettingsState createState() => _SettingsState();
+
 
 }
 
@@ -76,8 +65,38 @@ class _SettingsState extends State<Settings> {
   }
 
 
+  List _items = [];
+
+  Future<void> readJason() async {
+    final String respons = await rootBundle.loadString('assets/sampel.json');
+    final data = await json.decode(respons);
+    setState(() {
+      _items = data["settings"];
+      print("kein ahnuung: ${_items[0]}");
+    });
+  }
+
+  Future<void> editJason() async {
+    final String data = await rootBundle.loadString('assets/sampel.json');
+    final edit = await json.decode(data);
+    
+  }
+
+  bool hasRun = false;
+
+  void runer () {
+    if (!hasRun) {
+      readJason();
+      hasRun = true;
+    }
+  }
+
+
+
   @override
   Widget build(BuildContext context){
+    
+    runer();
 
     return Scaffold(
       appBar: AppBar(  
@@ -85,7 +104,7 @@ class _SettingsState extends State<Settings> {
           color: Colors.black
         ),
         flexibleSpace: Container(color: Colors.amber),
-        title:  const Text(
+        title: const Text(
           "Pogbilder - Settings", 
           style: TextStyle(
           color: Colors.black
@@ -172,20 +191,29 @@ class _SettingsState extends State<Settings> {
               Container(
                 color: Colors.white24,
                 width: 250,
-                child: const TextField(
+                child:  TextField(
+                  
                   decoration: InputDecoration(
+                    hintText: "${_items[0]}",
                      border: OutlineInputBorder(
                     ),
                     focusColor: Colors.black,
                     labelStyle: TextStyle(color: Colors.black)
                   ),
                 ),
-              )
+                
+              ),
+
+              IconButton(
+                onPressed: () {
+                 
+                }, 
+                icon: Icon(Icons.save))
             ],
           ),
           IconButton(
             onPressed: () {
-              print("test");
+              readJason();
             }, 
             icon: Icon(Icons.print_outlined))
         ],
