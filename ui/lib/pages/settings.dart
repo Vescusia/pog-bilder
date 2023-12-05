@@ -96,8 +96,6 @@ class _SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context){
     
-    runer();
-
     return Scaffold(
       appBar: AppBar(  
         iconTheme: IconThemeData(
